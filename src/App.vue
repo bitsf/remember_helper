@@ -19,6 +19,8 @@
       </div>
     </div>
 
+    <button class="save-button" @click="saveSettings">保存设置</button>
+
     <div class="timer-display">
       {{ currentTime }}秒
     </div>
@@ -38,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted, onMounted } from 'vue';
 
 const countdownTime = ref(3);
 const countupTime = ref(30);
@@ -54,6 +56,24 @@ const notificationInterval = ref(60);
 const sound1 = new Audio('/sounds/notification.mp3');
 const sound2 = new Audio('/sounds/notification.mp3');
 const sound3 = new Audio('/sounds/notification.mp3');
+
+// 读取设置
+const loadSettings = () => {
+  const savedCountdownTime = localStorage.getItem('countdownTime');
+  const savedCountupTime = localStorage.getItem('countupTime');
+  const savedNotificationInterval = localStorage.getItem('notificationInterval');
+
+  if (savedCountdownTime) countdownTime.value = parseInt(savedCountdownTime);
+  if (savedCountupTime) countupTime.value = parseInt(savedCountupTime);
+  if (savedNotificationInterval) notificationInterval.value = parseInt(savedNotificationInterval);
+};
+
+// 保存设置
+const saveSettings = () => {
+  localStorage.setItem('countdownTime', countdownTime.value);
+  localStorage.setItem('countupTime', countupTime.value);
+  localStorage.setItem('notificationInterval', notificationInterval.value);
+};
 
 const startTimer = () => {
   isRunning.value = true;
@@ -112,6 +132,11 @@ const handleScreenClick = (event) => {
   }
 };
 
+// 在组件加载时读取设置
+onMounted(() => {
+  loadSettings();
+});
+
 onUnmounted(() => {
   clearInterval(timerInterval.value);
 });
@@ -147,6 +172,12 @@ button {
   cursor: pointer;
 }
 
+.save-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
 .click-area-right {
   position: fixed;
   top: 0;
@@ -171,11 +202,11 @@ button {
   position: fixed;
   top: 10px;
   left: 10px;
-  text-align: left;  /* 左对齐 */
+  text-align: left;
 }
 
 .record-list ul {
-  list-style-type: none;  /* 去掉默认的列表样式 */
-  padding: 0;  /* 去掉内边距 */
+  list-style-type: none;
+  padding: 0;
 }
 </style> 
