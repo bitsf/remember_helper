@@ -12,6 +12,11 @@
         <label>正计时时间（秒）：</label>
         <input type="number" v-model="countupTime" :disabled="isRunning">
       </div>
+
+      <div class="input-field">
+        <label>提示音间隔（秒）：</label>
+        <input type="number" v-model="notificationInterval" :disabled="isRunning">
+      </div>
     </div>
 
     <div class="timer-display">
@@ -33,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onUnmounted } from 'vue';
 
 const countdownTime = ref(3);
 const countupTime = ref(30);
@@ -43,6 +48,7 @@ const isCountingUp = ref(false);
 const timerInterval = ref(null);
 const lastMinuteCheck = ref(0);
 const records = ref([]);
+const notificationInterval = ref(60);
 
 // 音频文件
 const sound1 = new Audio('/sounds/notification.mp3');
@@ -78,9 +84,7 @@ const startCountup = () => {
   timerInterval.value = setInterval(() => {
     currentTime.value++;
     
-    // 每60秒播放提示音
-    if (Math.floor(currentTime.value / 60) > lastMinuteCheck.value) {
-      lastMinuteCheck.value = Math.floor(currentTime.value / 60);
+    if (currentTime.value % notificationInterval.value === 0 && currentTime.value > 0) {
       sound3.play();
     }
     
