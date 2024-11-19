@@ -53,9 +53,10 @@
   const notificationInterval = ref(60);
   
   // 音频文件
-  const sound1 = new Audio('/sounds/notification.mp3');
-  const sound2 = new Audio('/sounds/notification.mp3');
-  const sound3 = new Audio('/sounds/notification.mp3');
+  const countdownSound = new Audio('/sounds/notification.mp3'); // 倒计时音效
+  const countupSound = new Audio('/sounds/notification.mp3'); // 正计时音效
+  const notificationSound = new Audio('/sounds/metronome-accent.ogg'); // 提示音效
+  const snapshotSound = new Audio('/sounds/metronome-click.ogg'); // 提示音效
   
   // 读取设置
   const loadSettings = () => {
@@ -88,7 +89,7 @@
       
       if (currentTime.value <= 0) {
         clearInterval(timerInterval.value);
-        sound1.play();
+        countdownSound.play(); // 播放倒计时音效
         setTimeout(() => {
           startCountup();
         }, 1000);
@@ -105,12 +106,12 @@
       currentTime.value++;
       
       if (currentTime.value % notificationInterval.value === 0 && currentTime.value > 0) {
-        sound3.play();
+        notificationSound.play(); // 播放提示音效
       }
       
       if (currentTime.value >= countupTime.value) {
         stopTimer();
-        sound2.play();
+        countupSound.play(); // 播放正计时音效
       }
     }, 1000);
   };
@@ -125,9 +126,10 @@
     if (isCountingUp.value) {
       if (event.clientX < window.innerWidth / 2) {  // 点击左侧
         records.value.unshift(currentTime.value);  // 记录当前秒数
+        snapshotSound.play(); // 播放快照音效
       } else {  // 点击右侧
         stopTimer();
-        sound2.play();
+        countupSound.play(); // 播放正计时音效
       }
     }
   };
@@ -200,8 +202,8 @@
   
   .record-list {
     position: fixed;
-    top: 10px;
-    left: 10px;
+    top: 20px;
+    left: 20px;
     text-align: left;
   }
   
