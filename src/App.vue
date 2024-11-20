@@ -38,7 +38,6 @@ watch(() => document.fullscreenElement, (newValue) => {
   flex-direction: column;
   height: 100vh; /* 使容器占满整个视口高度 */
   width: 100vw; /* 使容器占满整个视口宽度 */
-  overflow: hidden; /* 隐藏溢出内容 */
 }
 
 .fullscreen-button {
