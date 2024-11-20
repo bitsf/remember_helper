@@ -4,6 +4,7 @@
     <nav>
       <router-link to="/">计时器</router-link>
       <router-link to="/metronome">节拍器</router-link>
+      <router-link to="/countdown">倒计时器</router-link>
     </nav>
   </div>
 </template>
