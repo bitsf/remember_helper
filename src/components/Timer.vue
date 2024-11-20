@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-      <h1>计时器应用</h1>
+      <h1>计时器</h1>
       
       <div class="input-group">
         <div class="input-field">
