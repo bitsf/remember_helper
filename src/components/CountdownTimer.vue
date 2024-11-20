@@ -7,7 +7,7 @@
                 <input type="number" v-model="countdownTime" />
             </div>
             <div class="input-field">
-                <label>提醒时间（秒）：</label>
+                <label>提醒时间（秒）(0为不提醒)：</label>
                 <input type="number" v-model="reminderTime" />
             </div>
         </div>
@@ -15,7 +15,7 @@
         <div class="timer-display">
             {{ currentTime }}秒
         </div>
-        
+
         <div class="click-area-right" @click="handleScreenClick" v-if="isRunning"></div>
     </div>
 </template>
@@ -30,7 +30,7 @@ let intervalId = null;
 const isRunning = ref(false); // 新增的状态变量，用于控制计时器状态
 
 // 音频文件
-const countdownSound = new Audio('/sounds/notification.mp3'); // 倒计时结束音效
+const countdownSound = new Audio('/sounds/notification.ogg'); // 倒计时结束音效
 const reminderSound = new Audio('/sounds/metronome-click.ogg'); // 提醒音效
 
 const startCountdown = () => {
@@ -42,7 +42,7 @@ const startCountdown = () => {
         currentTime.value--;
 
         // 播放提醒音效
-        if (currentTime.value % reminderTime.value === 0 && currentTime.value > 0) {
+        if (reminderTime.value > 0 && currentTime.value % reminderTime.value === 0 && currentTime.value > 0) {
             reminderSound.currentTime = 0; // 重置播放位置
             reminderSound.play();
         }
@@ -89,7 +89,8 @@ const handleScreenClick = (event) => {
     font-weight: bold;
     position: relative;
     z-index: 10;
-  }
+    pointer-events: none;
+}
 
 .click-area-right {
     position: fixed;
@@ -99,7 +100,7 @@ const handleScreenClick = (event) => {
     height: 100%;
     cursor: pointer;
     background-color: red;
-  }
+}
 
 .debug-box {
     margin-top: 20px;
