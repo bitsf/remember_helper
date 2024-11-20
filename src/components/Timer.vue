@@ -178,7 +178,7 @@ button {
 .save-button {
     position: absolute;
     top: 20px;
-    right: 20px;
+    right: 60px;
 }
 
 .click-area-right {
