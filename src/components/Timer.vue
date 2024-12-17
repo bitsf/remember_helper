@@ -28,7 +28,14 @@
         <button @click="startTimer" :disabled="isRunning">开始计时</button>
 
         <div class="click-area-left" @click="handleScreenClick" v-if="isCountingUp"></div>
-        <div class="click-area-right" @click="handleScreenClick" v-if="isCountingUp"></div>
+        <div class="click-area-top-right" @click="handleScreenClick" v-if="isCountingUp"></div>
+        <div class="click-area-bottom-right" @mousedown="startRecording" @mouseup="stopRecording" v-if="isCountingUp"></div>
+        <div class="recording-list">
+            <h3>录音列表</h3>
+            <ul>
+                <li v-for="(record, index) in recordings" :key="index" @click="!isRunning ? playRecording(record.url) : null">{{ record.time }} 秒 {{ record.duration / 1000 }} 秒</li>
+            </ul>
+        </div>
 
         <div class="record-list">
             <h3>记录列表</h3>
@@ -42,15 +49,16 @@
 <script setup>
 import { ref, onUnmounted, onMounted } from 'vue';
 
-const countdownTime = ref(3);
-const countupTime = ref(30);
+const countdownTime = ref(10);
+const countupTime = ref(300);
+const notificationInterval = ref(60);
 const currentTime = ref(0);
 const isRunning = ref(false);
 const isCountingUp = ref(false);
 const timerInterval = ref(null);
 const lastMinuteCheck = ref(0);
 const records = ref([]);
-const notificationInterval = ref(60);
+const recordings = ref([]);
 
 // 音频文件
 const countdownSound = new Audio('/sounds/notification.ogg'); // 倒计时音效
@@ -80,6 +88,8 @@ const startTimer = () => {
     isRunning.value = true;
     currentTime.value = countdownTime.value;
     isCountingUp.value = false;
+    records.value = [];
+    recordings.value = [];
     startCountdown();
 };
 
@@ -127,12 +137,83 @@ const handleScreenClick = (event) => {
         if (event.clientX < window.innerWidth / 2) {  // 点击左侧
             records.value.unshift(currentTime.value);  // 记录当前秒数
             snapshotSound.play(); // 播放快照音效
-        } else {  // 点击右侧
-            stopTimer();
-            countupSound.play(); // 播放正计时音效
+        } else {  // 点击右上
+            if (event.clientY < window.innerHeight / 2) {
+                stopTimer();
+                countupSound.play(); // 播放正计时音效
+            }
         }
     }
 };
+
+let mediaRecorder;
+let stream;
+let isRecording = false; // 添加状态标志
+const startRecording = async (event) => {
+    try {
+        if (isRecording) return; // 如果已经在录音，直接返回
+        isRecording = true; // 设置为正在录音
+
+        console.log("startRecording");
+        // 请求麦克风权限
+        if (!stream || !stream.active)
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!isRecording){
+            console.log("recording too short");
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        } 
+        
+        mediaRecorder = new MediaRecorder(stream);
+        const audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        let startTime;
+        mediaRecorder.onstart = () => {
+            startTime = Date.now(); // 记录开始时间
+            console.log("开始录音");
+        };
+
+        mediaRecorder.onstop = () => {
+            if (audioChunks && audioChunks[0].size >0){
+                const endTime = Date.now(); // 记录结束时间
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                recordings.value.unshift({"time": currentTime.value, "url": audioUrl, "duration": endTime - startTime});
+            }else{
+                console.log("recorded too short");
+            }
+            isRecording=false;
+        };
+
+        mediaRecorder.start();
+        console.log("recording");
+
+    } catch (error) {
+        console.log("录音失败:");
+    }
+};
+
+const stopRecording = () => {
+    isRecording=false;
+    console.log("stopRecording");
+    if (typeof mediaRecorder !== 'undefined' && mediaRecorder.state === "recording") {
+        // mediaRecorder.stop(); // 停止录音
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        console.log("recording stopped");
+    } else {
+        console.log("mediaRecorder is not defined or not recording");
+    }
+};
+
+const audio = new Audio();
+function playRecording(audioUrl){
+    audio.src = audioUrl;
+    audio.play(); // 播放录音
+}
 
 // 在组件加载时读取设置
 onMounted(() => {
@@ -181,14 +262,24 @@ button {
     right: 60px;
 }
 
-.click-area-right {
+.click-area-top-right {
     position: fixed;
     top: 0;
     right: 0;
     width: 50%;
-    height: 100%;
+    height: 50%;
     cursor: pointer;
     background-color: red;
+}
+
+.click-area-bottom-right {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    width: 50%;
+    height: 50%;
+    cursor: pointer;
+    background-color: blue;
 }
 
 .click-area-left {
@@ -209,6 +300,19 @@ button {
 }
 
 .record-list ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+
+.recording-list {
+    position: fixed;
+    top: 20px;
+    left: 150px;
+    text-align: left;
+}
+
+.recording-list ul {
     list-style-type: none;
     padding: 0;
 }
