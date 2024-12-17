@@ -29,11 +29,11 @@
 
         <div class="click-area-left" @click="handleScreenClick" v-if="isCountingUp"></div>
         <div class="click-area-top-right" @click="handleScreenClick" v-if="isCountingUp"></div>
-        <div class="click-area-bottom-right" @mousedown="startRecording" @mouseup="stopRecording" v-if="isCountingUp"></div>
+        <div class="click-area-bottom-right" @touchstart="startRecording" @touchend="stopRecording" @mousedown="startRecording" @mouseup="stopRecording" v-if="isCountingUp"></div>
         <div class="recording-list">
             <h3>录音列表</h3>
             <ul>
-                <li v-for="(record, index) in recordings" :key="index" @click="!isRunning ? playRecording(record.url) : null">{{ record.time }} 秒 {{ record.duration / 1000 }} 秒</li>
+                <li v-for="(record, index) in recordings" :key="index" @click="!isRunning ? playRecording(record.url) : null">{{ record.time }} 秒 {{ (record.duration / 1000).toFixed(1) }} 秒</li>
             </ul>
         </div>
 
@@ -42,6 +42,9 @@
             <ul>
                 <li v-for="(record, index) in records" :key="index">{{ record }}秒</li>
             </ul>
+        </div>
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; font-size: 48px;" v-if="isRecording">
+            🎤
         </div>
     </div>
 </template>
@@ -59,6 +62,7 @@ const timerInterval = ref(null);
 const lastMinuteCheck = ref(0);
 const records = ref([]);
 const recordings = ref([]);
+const isRecording = ref(false);
 
 // 音频文件
 const countdownSound = new Audio('/sounds/notification.ogg'); // 倒计时音效
@@ -148,17 +152,30 @@ const handleScreenClick = (event) => {
 
 let mediaRecorder;
 let stream;
-let isRecording = false; // 添加状态标志
 const startRecording = async (event) => {
     try {
-        if (isRecording) return; // 如果已经在录音，直接返回
-        isRecording = true; // 设置为正在录音
+        if (!navigator) {
+            alert("no navigator");
+            return;
+        }
+        if (!navigator.mediaDevices){
+            alert("no mediaDevices");
+            return;
+        }
+        if (!navigator.mediaDevices.getUserMedia){
+            alert("no getUserMedia");
+            return;
+        }
+
+        if (isRecording.value) return; // 如果已经在录音，直接返回
+        isRecording.value = true; // 设置为正在录音
 
         console.log("startRecording");
         // 请求麦克风权限
-        if (!stream || !stream.active)
+        if (!stream || !stream.active){
             stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (!isRecording){
+        }
+        if (!isRecording.value){
             console.log("recording too short");
             stream.getTracks().forEach(track => track.stop());
             return;
@@ -186,19 +203,19 @@ const startRecording = async (event) => {
             }else{
                 console.log("recorded too short");
             }
-            isRecording=false;
+            isRecording.value=false;
         };
 
         mediaRecorder.start();
         console.log("recording");
-
     } catch (error) {
-        console.log("录音失败:");
+        console.log("录音失败:", error);
+        alert(error.message);
     }
 };
 
 const stopRecording = () => {
-    isRecording=false;
+    isRecording.value=false;
     console.log("stopRecording");
     if (typeof mediaRecorder !== 'undefined' && mediaRecorder.state === "recording") {
         // mediaRecorder.stop(); // 停止录音
@@ -211,6 +228,7 @@ const stopRecording = () => {
 
 const audio = new Audio();
 function playRecording(audioUrl){
+    console.log(`playing ${audioUrl}`);
     audio.src = audioUrl;
     audio.play(); // 播放录音
 }
